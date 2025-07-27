@@ -1,0 +1,8 @@
+pytest
+pytest-asyncio
+httpx
+coverage
+black
+ruff
+pre-commit
+pytest-mock
