@@ -9,7 +9,7 @@ from server.services.user import (
     delete_user,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.post("/", response_model=UserRead)

@@ -2,7 +2,7 @@ from server.db.models.user import User
 from server.db.session import get_session
 from server.schemas.user import UserCreate, UserUpdate
 from sqlmodel import select
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 
@@ -12,7 +12,6 @@ async def create_user(user_data: UserCreate) -> User:
             name=user_data.name,
             email=user_data.email,
             password=user_data.password,
-            created_at=datetime.utcnow().isoformat(),
         )
         session.add(user)
         await session.commit()

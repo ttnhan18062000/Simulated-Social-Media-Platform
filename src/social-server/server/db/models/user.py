@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
+from datetime import datetime, timezone
 
 
 class User(SQLModel, table=True):
@@ -7,4 +8,4 @@ class User(SQLModel, table=True):
     name: str
     email: str
     password: str
-    created_at: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

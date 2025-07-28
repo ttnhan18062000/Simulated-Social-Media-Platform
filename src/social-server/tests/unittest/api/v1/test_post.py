@@ -2,30 +2,27 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock, MagicMock
 from server import app
-from server.db.models.user import User
+from server.db.models.post import Post
 from server.common.config import base_url
 
 
 @pytest.mark.asyncio
-async def test_create_user(mocker):
-    # Fake user input + expected output
-    payload = {"name": "Nate", "email": "nate@test.com", "password": "123"}
-    fake_user = User(id=1, **payload, created_at="2024-01-01T00:00:00")
+async def test_create_post(mocker):
+    payload = {"content": "My first post", "user_id": 1}
+    fake_post = Post(id=1, **payload, created_at="2025-01-01T00:00:00")
 
-    # Mock session methods
     mock_session = MagicMock()
     mock_session.add = MagicMock()
     mock_session.commit = AsyncMock()
     mock_session.refresh = AsyncMock()
 
-    # Add refresh side effect to set .id
-    async def fake_refresh(user):
-        user.id = 1
+    async def fake_refresh(post):
+        post.id = 1
 
     mock_session.refresh.side_effect = fake_refresh
 
     mocker.patch(
-        "server.services.user.get_session",
+        "server.services.post.get_session",
         return_value=AsyncMock(
             __aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()
         ),
@@ -33,42 +30,39 @@ async def test_create_user(mocker):
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url=base_url) as ac:
-        resp = await ac.post("/api/v1/users/", json=payload)
+        resp = await ac.post("/api/v1/posts/", json=payload)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["name"] == "Nate"
-        assert data["email"] == "nate@test.com"
+        assert data["content"] == "My first post"
         assert data["id"] == 1
+        assert data["user_id"] == 1
 
 
 @pytest.mark.asyncio
-async def test_get_all_users(mocker):
-    # Create fake user return values
-    fake_users = [
-        User(
+async def test_get_all_posts(mocker):
+    fake_posts = [
+        Post(
             id=1,
-            name="Nate",
-            email="nate@test.com",
-            password="123",
-            created_at="2024-01-01T00:00:00",
+            content="Content 1",
+            user_id=1,
+            created_at="2025-01-01T00:00:00",
         ),
-        User(
+        Post(
             id=2,
-            name="Jane",
-            email="jane@test.com",
-            password="456",
-            created_at="2024-01-02T00:00:00",
+            content="Content 2",
+            user_id=2,
+            created_at="2025-01-02T00:00:00",
         ),
     ]
 
-    # Mock session + exec
     mock_result = MagicMock()
-    mock_result.all.return_value = fake_users
+    mock_result.all.return_value = fake_posts
 
     mock_session = MagicMock()
     mock_session.exec = AsyncMock(return_value=mock_result)
+
     mocker.patch(
-        "server.services.user.get_session",
+        "server.services.post.get_session",
         return_value=AsyncMock(
             __aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()
         ),
@@ -76,30 +70,30 @@ async def test_get_all_users(mocker):
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url=base_url) as ac:
-        resp = await ac.get("/api/v1/users/")
+        resp = await ac.get("/api/v1/posts/")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 2
-        assert data[0]["name"] == "Nate"
+        assert data[0]["content"] == "Content 1"
 
 
 @pytest.mark.asyncio
-async def test_get_user_by_id(mocker):
-    fake_user = User(
+async def test_get_post_by_id(mocker):
+    fake_post = Post(
         id=1,
-        name="Nate",
-        email="nate@test.com",
-        password="123",
-        created_at="2024-01-01T00:00:00",
+        content="Lone content",
+        user_id=1,
+        created_at="2025-01-01T00:00:00",
     )
 
     mock_result = MagicMock()
-    mock_result.first.return_value = fake_user
+    mock_result.first.return_value = fake_post
 
     mock_session = MagicMock()
     mock_session.exec = AsyncMock(return_value=mock_result)
+
     mocker.patch(
-        "server.services.user.get_session",
+        "server.services.post.get_session",
         return_value=AsyncMock(
             __aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()
         ),
@@ -107,46 +101,40 @@ async def test_get_user_by_id(mocker):
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url=base_url) as ac:
-        resp = await ac.get("/api/v1/users/1")
+        resp = await ac.get("/api/v1/posts/1")
         assert resp.status_code == 200
         data = resp.json()
         assert data["id"] == 1
-        assert data["name"] == "Nate"
+        assert data["user_id"] == 1
+        assert data["content"] == "Lone content"
 
 
 @pytest.mark.asyncio
-async def test_update_user(mocker):
-    # Simulate a user before update
-    fake_user = User(
+async def test_update_post(mocker):
+    fake_post = Post(
         id=1,
-        name="Nate",
-        email="nate@test.com",
-        password="123",
-        created_at="2025-01-01T00:00:00Z",
+        content="Old Content",
+        user_id=1,
+        created_at="2025-01-01T00:00:00",
+    )
+    updated_fields = {"content": "New Content"}
+    updated_post = Post(
+        id=1,
+        content="New Content",
+        user_id=1,
+        created_at="2025-01-01T00:00:00",
     )
 
-    # Expected updated fields
-    updated_fields = {"name": "Nate Updated"}
-    updated_user = User(
-        id=1,
-        name="Nate Updated",
-        email="nate@test.com",  # email unchanged
-        password="123",
-        created_at="2025-01-01T00:00:00Z",
-    )
-
-    # Mock result.exec().first() to simulate SELECT returning existing user
     mock_result = MagicMock()
-    mock_result.first.return_value = fake_user
+    mock_result.first.return_value = fake_post
 
-    # Mock session
     mock_session = MagicMock()
     mock_session.exec = AsyncMock(return_value=mock_result)
     mock_session.commit = AsyncMock()
     mock_session.refresh = AsyncMock()
 
     mocker.patch(
-        "server.services.user.get_session",
+        "server.services.post.get_session",
         return_value=AsyncMock(
             __aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()
         ),
@@ -154,25 +142,23 @@ async def test_update_user(mocker):
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url=base_url) as ac:
-        resp = await ac.put("/api/v1/users/1", json=updated_fields)
+        resp = await ac.put("/api/v1/posts/1", json=updated_fields)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["name"] == "Nate Updated"
-        assert data["id"] == 1
+        assert data["content"] == "New Content"
 
 
 @pytest.mark.asyncio
-async def test_delete_user(mocker):
-    fake_user = User(
+async def test_delete_post(mocker):
+    fake_post = Post(
         id=1,
-        name="Nate",
-        email="nate@test.com",
-        password="123",
-        created_at="2024-01-01T00:00:00Z",
+        content="Bye!",
+        user_id=1,
+        created_at="2025-01-01T00:00:00",
     )
 
     mock_result = MagicMock()
-    mock_result.first.return_value = fake_user
+    mock_result.first.return_value = fake_post
 
     mock_session = MagicMock()
     mock_session.exec = AsyncMock(return_value=mock_result)
@@ -180,7 +166,7 @@ async def test_delete_user(mocker):
     mock_session.commit = AsyncMock()
 
     mocker.patch(
-        "server.services.user.get_session",
+        "server.services.post.get_session",
         return_value=AsyncMock(
             __aenter__=AsyncMock(return_value=mock_session), __aexit__=AsyncMock()
         ),
@@ -188,6 +174,6 @@ async def test_delete_user(mocker):
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url=base_url) as ac:
-        resp = await ac.delete("/api/v1/users/1")
+        resp = await ac.delete("/api/v1/posts/1")
         assert resp.status_code == 204
         assert resp.content == b""

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from server.api.v1.user import router as user_router
+from server.api.v1 import user, post
 from server.db.session import init_db
 
 
@@ -18,4 +18,5 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(user_router, prefix="/api/v1/users")
+app.include_router(user.router, prefix="/api/v1")
+app.include_router(post.router, prefix="/api/v1")
