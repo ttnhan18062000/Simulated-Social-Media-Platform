@@ -1,4 +1,4 @@
-from server.db.models.user import User
+from server.db.models import User
 from server.db.session import get_session
 from server.schemas.user import UserCreate, UserUpdate
 from sqlmodel import select

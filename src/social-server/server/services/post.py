@@ -1,5 +1,5 @@
 from sqlmodel import select
-from server.db.models.post import Post
+from server.db.models import Post
 from server.db.session import get_session  # reuse existing get_session
 from server.schemas.post import PostCreate, PostUpdate
 

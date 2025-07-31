@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock, MagicMock
 from server import app
-from server.db.models.post import Post
+from server.db.models import Post
 from server.common.config import base_url
 
 

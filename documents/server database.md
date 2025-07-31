@@ -1,212 +1,232 @@
-🔑 Core Entities
-1. User
-json
-Copy
-Edit
+# 🧠 Social Media MVP: Core Design (Posts, Users, Newsfeed)
+
+## 🔑 Core Entities
+
+### 1. User
+
+```json
 {
-  id,
-  username,
-  email,
-  password_hash,
-  bio,
-  avatar_url,
-  created_at,
-  last_active
+  "id": "...",
+  "username": "...",
+  "email": "...",
+  "password_hash": "...",
+  "bio": "...",
+  "avatar_url": "...",
+  "created_at": "...",
+  "last_active_at": "..."
 }
-2. Post
-json
-Copy
-Edit
+```
+
+### 2. Post
+
+```json
 {
-  id,
-  user_id,
-  content_text,
-  created_at,
-  updated_at,
-  visibility, // public, friends-only, private
+  "id": "...",
+  "user_id": "...",
+  "content_text": "...",
+  "image_url": "...",
+  "visibility": "public | friends-only | private",
+  "created_at": "...",
+  "updated_at": "..."
 }
-📎 Relationships (Core)
-3. Friendship
-Bidirectional (or two rows for undirected model)
+```
 
-json
-Copy
-Edit
+---
+
+## 📌 Relationships
+
+### 3. Friendship (bidirectional via two rows)
+
+```json
 {
-  id,
-  user_id,
-  friend_id,
-  status, // requested, accepted, blocked
-  created_at
+  "id": "...",
+  "user_id": "...",
+  "friend_id": "...",
+  "status": "requested | accepted | blocked",
+  "created_at": "..."
 }
-4. Follow
-One-way relationship (Twitter-style)
+```
 
-json
-Copy
-Edit
+### 4. Follow (one-way, Twitter-style)
+
+```json
 {
-  id,
-  follower_id,
-  following_id,
-  created_at
+  "id": "...",
+  "follower_id": "...",
+  "following_id": "...",
+  "created_at": "..."
 }
-5. Block
-One-way hard block (prevents seeing/interaction)
+```
 
-json
-Copy
-Edit
+### 5. Block (one-way hard block)
+
+```json
 {
-  id,
-  blocker_id,
-  blocked_id,
-  created_at
+  "id": "...",
+  "blocker_id": "...",
+  "blocked_id": "...",
+  "created_at": "..."
 }
-💬 Interactions
-6. Comment
-json
-Copy
-Edit
+```
+
+---
+
+## 💬 User Interactions
+
+### 6. Comment
+
+```json
 {
-  id,
-  post_id,
-  user_id,
-  content_text,
-  created_at
+  "id": "...",
+  "post_id": "...",
+  "user_id": "...",
+  "content_text": "...",
+  "created_at": "..."
 }
-7. Reaction
-json
-Copy
-Edit
+```
+
+### 7. Reaction
+
+```json
 {
-  id,
-  user_id,
-  post_id,
-  type, // upvote or downvote
-  created_at
+  "id": "...",
+  "user_id": "...",
+  "post_id": "...",
+  "type": "like | love | upvote | etc.",
+  "created_at": "..."
 }
-🏷️ Categorization
-8. Category
-json
-Copy
-Edit
+```
+
+---
+
+## 🍿 Post Classification
+
+### 8. Category (admin/curated)
+
+```json
 {
-  id,
-  name
+  "id": "...",
+  "name": "..."
 }
-9. Tag
-json
-Copy
-Edit
+```
+
+### 9. Tag (user-generated)
+
+```json
 {
-  id,
-  name
+  "id": "...",
+  "name": "..."
 }
-10. PostCategory / PostTag (many-to-many pivot)
-json
-Copy
-Edit
+```
+
+### 10. PostCategory (many-to-many)
+
+```json
 {
-  post_id,
-  category_id
+  "post_id": "...",
+  "category_id": "..."
 }
-json
-Copy
-Edit
+```
+
+### 11. PostTag (many-to-many)
+
+```json
 {
-  post_id,
-  tag_id
+  "post_id": "...",
+  "tag_id": "..."
 }
-📰 Feed System (Basic Personalization)
-You mentioned feeds that reflect:
+```
 
-history (interacted content)
+---
 
-follows
+## 📰 Feed & History
 
-friends
+### 12. UserPostViewHistory
 
-So you’ll need:
-
-11. UserPostViewHistory
-json
-Copy
-Edit
+```json
 {
-  id,
-  user_id,
-  post_id,
-  viewed_at
+  "id": "...",
+  "user_id": "...",
+  "post_id": "...",
+  "viewed_at": "..."
 }
-You can combine this with:
+```
 
-UserReactionHistory
+*You can optionally add:*
 
-UserCommentHistory
+- `UserReactionHistory`
+- `UserCommentHistory`
+- `UserFollowedTags`
+- `UserFollowedCategories`
 
-UserFollowedCategories/Tags (for interest personalization)
+---
 
-✨ Optional but Practical
-12. Notification
-For likes, comments, friend requests
+## ✨ Optional but MVP-Worthy
 
-json
-Copy
-Edit
+### 13. Notification
+
+```json
 {
-  id,
-  user_id, // recipient
-  type, // comment, reaction, follow, friend_request
-  actor_id,
-  post_id,
-  read: boolean,
-  created_at
+  "id": "...",
+  "user_id": "...",     // recipient
+  "actor_id": "...",    // who triggered the event
+  "type": "reaction | comment | follow | friend_request",
+  "post_id": "...",
+  "read": true,
+  "created_at": "..."
 }
-13. FriendRequest (separate from friendship table, cleaner logic)
-json
-Copy
-Edit
+```
+
+### 14. FriendRequest (separate from Friendship)
+
+```json
 {
-  id,
-  from_user_id,
-  to_user_id,
-  status, // pending, accepted, declined
-  created_at
+  "id": "...",
+  "from_user_id": "...",
+  "to_user_id": "...",
+  "status": "pending | accepted | declined",
+  "created_at": "..."
 }
-🚀 Query-Based Feeds (Simplified Logic)
-Pull in:
+```
 
-Posts by followed users
+---
 
-Posts from friends
+## 🚀 Query-Based Feed (Simplified Logic)
 
-Posts tagged with your interaction history
+- Posts from `Followed` users
+- Posts from `Friends`
+- Posts matching tags/categories the user has interacted with
+- Posts recently `Liked`, `Viewed`, or `Commented`
 
-Sort by recency or hybrid "score" (recency + interaction relevance)
+*Sort options:*
 
-🧠 What You Missed (Must-Have Even in MVP):
-Visibility/privacy on posts
+- By `created_at`
+- By hybrid score: `recency + engagement relevance`
 
-Blocking should restrict access to user profile + content
+---
 
-Post timestamps
+## 🧠 Design Notes
 
-Follow vs friend distinction — follow = one-way, friend = mutual
+- ✅ Posts support visibility: `public`, `friends-only`, `private`
+- ✅ Follow ≠ Friend
+- ✅ Block disables access to both profile & content
+- ✅ Categories are curated, Tags are user-generated
+- ✅ Feed is customizable using follow & interaction data
 
-Tag/category separation — categories are curated, tags are user-generated
+---
 
-Feed curation — without history or follow data, you can’t personalize feed
+## 🔗 Entity Relationship Diagram (Textual Form)
 
-TL;DR Entity Relationship Visual (simplified):
-sql
-Copy
-Edit
-User --< Post >-- Tag
-User --< Reaction >-- Post
-User --< Comment >-- Post
-User --< ViewHistory >-- Post
-User --< Follow >-- User
-User --< Block >-- User
-User --< FriendRequest
-Post >-- Category
+```
+User
+ ├─< Post >─├─< Reaction >─┐
+ │          ├─< Comment >─┐
+ │          ├─< PostTag >─├─> Tag
+ │          └─< PostCategory >─> Category
+ ├─< Follow >─> User
+ ├─< Friendship >─> User
+ ├─< Block >─> User
+ ├─< Notification
+ └─< ViewHistory >─> Post
+```
+
