@@ -2,6 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import datetime, timezone
 
+
 # ----------------------------------------
 # User
 # ----------------------------------------
@@ -143,6 +144,7 @@ class PostCategory(SQLModel, table=True):
 
 
 # ------------- BELOWS ARE OPTIONAL -----------------
+
 
 # ----------------------------------------
 # View History
