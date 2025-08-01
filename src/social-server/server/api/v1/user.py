@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from typing import List
-from server.schemas.user import UserCreate, UserRead, UserUpdate
+from server.schemas.user import UserCreate, UserRead, UserUpdate, UserReadWithPosts
 from server.services.user import (
     create_user,
     get_user,
@@ -24,6 +24,14 @@ async def read_all_users():
 
 @router.get("/{user_id}", response_model=UserRead)
 async def read(user_id: int):
+    user = await get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.get("/{user_id}/with-posts", response_model=UserReadWithPosts)
+async def get_user_with_posts(user_id: int):
     user = await get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

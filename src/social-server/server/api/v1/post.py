@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, HTTPException, status
 from server.schemas.post import PostCreate, PostRead, PostUpdate
 from server.services.post import (
@@ -6,6 +7,7 @@ from server.services.post import (
     get_post_by_id,
     update_post,
     delete_post,
+    get_posts_by_user_id,
 )
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
@@ -42,3 +44,8 @@ async def delete(post_id: int):
     deleted = await delete_post(post_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Post not found")
+
+
+@router.get("/by-user/{user_id}", response_model=List[PostRead])
+async def get_posts_by_user(user_id: int):
+    return await get_posts_by_user_id(user_id)

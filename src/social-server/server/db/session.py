@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from contextlib import asynccontextmanager
 
 DATABASE_URL = "sqlite+aiosqlite:///./social.db"
+DB_FILE = "./social.db"
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
