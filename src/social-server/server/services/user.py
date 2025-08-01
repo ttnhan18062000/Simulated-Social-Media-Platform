@@ -2,6 +2,7 @@ from server.db.models import User
 from server.db.session import get_session
 from server.schemas.user import UserCreate, UserUpdate
 from sqlmodel import select
+from sqlalchemy.orm import selectinload
 from datetime import datetime, timezone
 from typing import List
 
@@ -9,9 +10,9 @@ from typing import List
 async def create_user(user_data: UserCreate) -> User:
     async with get_session() as session:
         user = User(
-            name=user_data.name,
-            email=user_data.email,
-            password=user_data.password,
+            username=user_data.username,
+            password_hash=user_data.password,  # Normally hash before storing!
+            created_at=datetime.now(timezone.utc),
         )
         session.add(user)
         await session.commit()
@@ -21,13 +22,15 @@ async def create_user(user_data: UserCreate) -> User:
 
 async def get_all_users() -> List[User]:
     async with get_session() as session:
-        users = await session.exec(select(User))
-        return users.all()
+        result = await session.exec(select(User))
+        return result.all()
 
 
 async def get_user(user_id: int) -> User | None:
     async with get_session() as session:
-        result = await session.exec(select(User).where(User.id == user_id))
+        result = await session.exec(
+            select(User).options(selectinload(User.posts)).where(User.id == user_id)
+        )
         return result.first()
 
 
@@ -39,8 +42,12 @@ async def update_user(user_id: int, user_data: UserUpdate) -> User | None:
             return None
 
         for field, value in user_data.model_dump(exclude_unset=True).items():
-            setattr(user, field, value)
+            if field == "password":
+                setattr(user, "password_hash", value)  # Replace password
+            else:
+                setattr(user, field, value)
 
+        user.last_active_at = datetime.now(timezone.utc)
         await session.commit()
         await session.refresh(user)
         return user

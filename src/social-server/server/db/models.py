@@ -8,10 +8,8 @@ from datetime import datetime, timezone
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str
-    email: str
     password_hash: str
     bio: Optional[str] = None
-    avatar_url: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_active_at: Optional[datetime] = None
 
@@ -36,16 +34,26 @@ class Post(SQLModel, table=True):
 # ----------------------------------------
 # Feed
 # ----------------------------------------
-class Feed(SQLModel, table=True):
+class UserFeed(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id")
-    content_text: str
-    image_url: Optional[str] = None
-    visibility: str = Field(default="public")  # public, friends-only, private
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: Optional[datetime] = None
 
-    author: Optional[User] = Relationship(back_populates="posts")
+    user_id: int = Field(foreign_key="user.id")  # Who the feed is for
+    post_id: int = Field(foreign_key="post.id")  # What post appears in the feed
+
+    added_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )  # When the post was added to the feed
+    rank_score: Optional[float] = None  # optional score from ranking logic
+    source_type: str = Field(
+        default="follow"
+    )  # e.g., follow, friend, recommended, trending
+    is_seen: bool = Field(default=False)
+
+    # Optional caching for visibility at time of insertion
+    visibility: str = Field(default="public")  # Snapshot of post visibility
+
+    post: Optional["Post"] = Relationship()
+    user: Optional["User"] = Relationship()
 
 
 # ----------------------------------------
@@ -72,11 +80,11 @@ class Friendship(SQLModel, table=True):
 # ----------------------------------------
 # Block
 # ----------------------------------------
-class Block(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    blocker_id: int = Field(foreign_key="user.id")
-    blocked_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+# class Block(SQLModel, table=True):
+#     id: Optional[int] = Field(default=None, primary_key=True)
+#     blocker_id: int = Field(foreign_key="user.id")
+#     blocked_id: int = Field(foreign_key="user.id")
+#     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ----------------------------------------
@@ -123,6 +131,7 @@ class PostTag(SQLModel, table=True):
 class Category(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
+    description: str
 
 
 # ----------------------------------------
