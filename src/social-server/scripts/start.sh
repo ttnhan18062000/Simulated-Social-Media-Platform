@@ -15,7 +15,8 @@ python -m pip install --upgrade pip
 REM Install requirements
 echo Installing dependencies...
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 REM Run the FastAPI app
 echo Starting FastAPI server...
-uvicorn server.__init__:app --host 0.0.0.0 --port 8000 --reload
+uvicorn server:app --host 0.0.0.0 --port 8000 --reload

@@ -1,7 +1,9 @@
+from typing import List
 from sqlmodel import select
-from server.db.models.post import Post
-from server.db.session import get_session  # reuse existing get_session
+from server.db.models import Post
+from server.db.session import get_session
 from server.schemas.post import PostCreate, PostUpdate
+from datetime import datetime
 
 
 async def create_post(post_data: PostCreate):
@@ -33,6 +35,7 @@ async def update_post(post_id: int, post_data: PostUpdate):
             return None
         for key, value in post_data.model_dump(exclude_unset=True).items():
             setattr(post, key, value)
+        post.updated_at = datetime.now()
         await session.commit()
         await session.refresh(post)
         return post
@@ -47,3 +50,9 @@ async def delete_post(post_id: int):
         await session.delete(post)
         await session.commit()
         return True
+
+
+async def get_posts_by_user_id(user_id: int) -> List[Post]:
+    async with get_session() as session:
+        result = await session.exec(select(Post).where(Post.user_id == user_id))
+        return result.all()
