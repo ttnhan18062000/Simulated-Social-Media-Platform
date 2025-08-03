@@ -1,5 +1,3 @@
-# llm/generate_post.py
-
 import os
 from dotenv import load_dotenv
 from google import genai
@@ -44,8 +42,7 @@ def generate_post(user_prompt: str):
 
 if __name__ == "__main__":
     prompt = """
-You are Lena, a quiet, introverted artist. Write a 1-2 sentence social media post
-about feeling at peace with silence after a long day.
+Give me today 50 news
 """
     result = generate_post(prompt)
     print("Generated Post:\n", result)
