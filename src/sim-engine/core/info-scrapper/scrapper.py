@@ -1,77 +1,74 @@
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from bs4 import BeautifulSoup
+import requests
 import time
+import json
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import os
 
+# Load .env file
+load_dotenv()
 
-# Setup
-BASE_DOMAIN = "https://voz.vn"
-BASE_FORUM_URL = f"{BASE_DOMAIN}/f/%C4%90iem-bao.33"
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")  # <<< PUT YOUR KEY HERE
+OUTPUT_FILE = "news_data.jsonl"
 
-# --- Chrome Options ---
-chrome_options = Options()
-chrome_options.add_argument("--headless")  # Comment this out to see the browser
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("window-size=1920,1080")
-chrome_options.add_argument(
-    "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/115 Safari/537.36"
-)
+LANGUAGE = "vi"
+PAGE_SIZE = 100
+FROM_DATE = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+QUERIES = [
+    "bóng đá",
+    "chính trị",
+    "giải trí",
+    "kinh tế",
+    "giáo dục",
+    "thời tiết",
+    "pháp luật",
+    "sức khỏe",
+]
 
-# Path to chromedriver (adjust if needed)
-CHROMEDRIVER_PATH = os.getenv("CHROMEDRIVER_PATH", "chromedriver")
+OUTPUT_FILE = "articles.json"
 
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options)
 
-# --- Scraping functions ---
-def scrape_page(page_num):
-    url = f"{BASE_FORUM_URL}/page-{page_num}"
-    print(f"Scraping {url} ...")
-
-    try:
-        driver.get(url)
-        time.sleep(2)  # Let JavaScript execute and content load
-
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        posts = soup.select("div.structItem-title > a")
-
-        result = []
-        for post in posts:
-            title = post.get_text(strip=True)
-            link = post.get("href")
-            full_url = BASE_DOMAIN + link if link.startswith("/") else link
-            result.append({"title": title, "url": full_url})
-
-        return result
-
-    except Exception as e:
-        print(f"❌ Error on page {page_num}: {e}")
+def fetch_articles(query, page):
+    print(f"📄 Fetching '{query}' | page {page}...")
+    url = "https://newsapi.org/v2/everything"
+    params = {
+        "q": query,
+        "language": LANGUAGE,
+        "from": FROM_DATE,
+        "pageSize": PAGE_SIZE,
+        "page": page,
+        "apiKey": NEWS_API_KEY,
+    }
+    resp = requests.get(url, params=params)
+    if resp.status_code != 200:
+        print(f"❌ Error {resp.status_code}: {resp.text}")
         return []
+    return resp.json().get("articles", [])
 
 
-def scrape_all_pages(start=1, end=10):
-    all_posts = []
-    for page in range(start, end + 1):
-        posts = scrape_page(page)
-        all_posts.extend(posts)
-    return all_posts
+def save_articles(all_articles, base_filename="articles"):
+    i = 1
+    while True:
+        filename = f"{base_filename}_{i}.json"
+        if not os.path.exists(filename):
+            break
+        i += 1
 
-
-def save_to_file(posts, filename="voz_posts.txt"):
     with open(filename, "w", encoding="utf-8") as f:
-        for idx, post in enumerate(posts, 1):
-            f.write(f"{idx:03d}. {post['title']}\n")
-            f.write(f"     {post['url']}\n\n")
+        json.dump(all_articles, f, ensure_ascii=False, indent=2)
+
+    print(f"✅ Saved to {filename}. Total articles: {len(all_articles)}")
 
 
-# --- Entry point ---
+def main():
+    print("🚀 Starting NewsAPI crawl with query rotation...")
+    all_articles = []
+    for query in QUERIES:
+        articles = fetch_articles(query, 1)
+        all_articles.extend(articles)
+        time.sleep(1)
+    save_articles(all_articles)
+
+
 if __name__ == "__main__":
-    posts = scrape_all_pages(1, 10)
-    save_to_file(posts)
-    driver.quit()
-    print("✅ Saved to voz_posts.txt")
+    main()
