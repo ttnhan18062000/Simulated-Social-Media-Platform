@@ -2,3 +2,10 @@ google-genai
 python-dotenv
 langchain[google-genai]
 langgraph
+beautifulsoup4
+requests
+cloudscraper
+selenium
+webdriver-manager
+undetected-chromedriver
+bs4
